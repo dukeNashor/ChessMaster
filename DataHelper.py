@@ -1,7 +1,10 @@
+import os
+
 import cv2
 import numpy as np
+
 import glob
-import os
+import h5py
 
 # global vars
 g_dataset_dir = "../dataset/"
@@ -51,3 +54,17 @@ class DataHelper:
         return cv2.imread(file_name, format)
 
 
+    # h5py functions
+    
+    # read h5py file
+    # we assume the labels and 
+    @staticmethod
+    def ReadH5pyFile(file_name, data_name):
+        h5_buffer = h5py.File(file_name)
+        return h5_buffer[data_name].copy()
+
+    # write h5py file
+    @staticmethod
+    def WriteH5pyFile(file_name, mat, data_name = "dataset"):
+        with h5py.File(file_name, 'w') as f:
+            f.create_dataset(data_name, data = mat)

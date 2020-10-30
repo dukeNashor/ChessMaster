@@ -38,6 +38,10 @@ class BoardHelper:
         if type(l) == str:
             return np.array([l]).reshape((8,8))
 
+    @staticmethod
+    def GetBoardCell(board_image, row = 0, col = 0, size = 50):
+        return np.array(board_image)[row*size:(row+1)*size,col*size:(col+1)*size]
+
 
     # function to split into 64 square (modified from https://www.kaggle.com/yeahlan/chess-positions-fen-generator)
     # accepts grayscale image as input e.g. img = cv2.imread('../dataset/'+location+'/'+name+'.jpeg',cv2.IMREAD_GRAYSCALE)

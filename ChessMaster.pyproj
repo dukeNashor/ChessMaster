@@ -29,12 +29,21 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ChessMaster_test.py" />
+    <Compile Include="Classifiers\Classifiers.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DataHelper.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="FeatureExtractor.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Plotter.py">
       <SubType>Code</SubType>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Classifiers\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
