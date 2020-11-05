@@ -29,7 +29,13 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ChessMaster_test.py" />
-    <Compile Include="Classifiers\Classifiers.py">
+    <Compile Include="Classifiers\CNNClassifier.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Classifiers\IClassifier.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Classifiers\__init__.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DataHelper.py">

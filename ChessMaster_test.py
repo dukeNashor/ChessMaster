@@ -1,17 +1,31 @@
-from BoardHelper import *
-from DataHelper import *
-from ChessGlobalDefs import *
-from Plotter import *
-import Classifiers
-from FeatureExtractor import *
+try:
+    import BoardHelper
+    import DataHelper
+    from ChessGlobalDefs import g_dataset_dir, g_train_dir, g_test_dir
+    import Plotter
+    import FeatureExtractor
+    import Classifiers
+except ImportError:
+    print("Import failed.")
 
 a_random_file = "../dataset/train/1b1B1b2-2pK2q1-4p1rB-7k-8-8-3B4-3rb3.jpeg"
 
-test_SysSpecs = True
-test_CVFeature = True
+
+test_SysSpecs = False
+test_CVFeature = False
 test_DataHelper = False
 test_Plotter = False
 test_BoardHelper = False
+
+test_CNN = True
+
+if test_CNN:
+    cnn = Classifiers.CNNClassifier()
+    train_names = DataHelper.GetFileNamesInDir(g_train_dir)
+    cnn.Train(train_names)
+
+
+
 
 
 if test_SysSpecs:
