@@ -21,13 +21,70 @@ def FENtoL(fen):
         r"7": r"0000000",
         r"8": r"00000000",
     }
-    if type(fen) == str:
-        fen = [fen]
 
-    for s in fen:
-        for key in rules.keys():
-            s = re.sub(key, rules[key], s)
-        return list(s)
+    for key in rules.keys():
+        fen = re.sub(key, rules[key], fen)
+
+    return list(fen)
+
+
+# Label array to char list:
+def LabelArrayToL(arr):
+    rules = {
+        0 : "P",
+        1 : "N",
+        2 : "B",
+        3 : "R",
+        4 : "Q",
+        5 : "K",
+
+        6 : "p",
+        7 : "n",
+        8 : "b",
+        9 : "r",
+       10 : "q",
+       11 : "k",
+
+       12 : "0"
+    }
+
+    flattened = arr.flatten(order = "C")
+
+    L = []
+
+    for x in flattened:
+        L.append(rules[x])
+
+    return L
+
+# char list to FEN
+def LtoFEN(L):
+
+    FEN = ""
+    
+    for y in range(8):
+        counter = 0
+        for x in range(8):
+            idx = x + y * 8
+            char = L[idx]
+
+            if char == "0":
+                counter += 1
+                if x == 7:
+                    FEN += str(counter)
+            else:
+                if counter:
+                    FEN += str(counter)
+                    counter = 0
+
+                FEN += char
+        if y != 7:
+            FEN += "-"
+        
+            
+    return FEN
+
+
 
 # FEN to one-hot encoding, in our case, it returns an 64 by 13 array, with each row as a one-hot to a grid.
 def FENtoOneHot(fen):
@@ -75,7 +132,6 @@ def FENtoOneHot(fen):
 
     return one_hot_array
 
-
 # get 8*8 char matrix
 def LtoCharMat(l):
     if type(l) == list:
@@ -85,28 +141,6 @@ def LtoCharMat(l):
 
 def GetBoardCell(board_image, row = 0, col = 0, size = 50):
     return np.array(board_image)[row*size:(row+1)*size,col*size:(col+1)*size]
-
-
-# function to split into 64 square (modified from https://www.kaggle.com/yeahlan/chess-positions-fen-generator)
-# accepts grayscale image as input e.g. img = cv2.imread('../dataset/'+location+'/'+name+'.jpeg',cv2.IMREAD_GRAYSCALE)
-def ReadBoardFEN(board_image, fen):
-    y_1 = FENtoL(fen)
-
-    # Divide the picture into 64 pieces
-    # TODO:
-    # 1. removed the hard coded size
-    # 2. unroll the loop by hardcoding the 64 groups of indices.
-    size=50 
-    index2=np.zeros((64,size**2))
-    for i in range(8):
-        for j in range(8):
-            index2[i*8+j,:]=np.array(board_image)[i*size:(i+1)*size,j*size:(j+1)*size].reshape(1,size**2)
-
-    return index2, y_1
-
-# Overload of the above function.
-def ReadBoardString(board_image, name_str):
-    return ReadBoardFEN(board_image, FENtoL(name_str))
 
 # get grids of image
 def ImageToGrids(image, grid_size_x, grid_size_y):

@@ -79,17 +79,13 @@ class CNNClassifier(Classifiers.IClassifier):
         # generator
         def func_generator(train_file_names):
             for image_file_name in train_file_names:
-                x = CNNClassifier.PreprocessImage(image_file_name)
+                img = DataHeler.ReadImage(image_file_name)
+                x = CNNClassifier.PreprocessImage(img)
                 y = np.array(BoardHelper.FENtoOneHot(DataHelper.GetCleanNameByPath(image_file_name)))
                 yield x, y
         
         # try load last checkpoint
-        try:
-            last_cp = tf.train.latest_checkpoint(CNNClassifier.s_check_point_path)
-            self.__model__.load_weights(last_cp)
-            print("Loaded checkpoint from " + last_cp)
-        except:
-            print("No checkpoint is loaded.")
+        self.LoadMostRecentModel()
 
         # train
         self.__model__.fit(func_generator(train_data_names),
@@ -102,24 +98,26 @@ class CNNClassifier(Classifiers.IClassifier):
 
 
     # this should accept a 64 * m * n numpy array as query data, and returns the fen notation of the board.
-    def Predict(query_data):
-        pred = self.__model__.predict(query_data).argmax(axis=1).reshape(-1, 8, 8)
-        print(pred)
+    def Predict(self, query_data):
+        grids = CNNClassifier.PreprocessImage(query_data)
+        pred = self.__model__.predict(grids).argmax(axis=1)
 
+        return pred
 
-    def SaveModel(self, save_file_name):
-        path_name = os.path.dirname(save_file_name)
-        os.makedirs(path_name, exist_ok=True)
+    def SaveModel(self):
+        os.makedirs(CNNClassifier.s_check_point_path, exist_ok=True)
+        __model__.save_weights(CNNClassifier.s_check_point_file_name)
 
-        __model__.save_weights(save_file_name)
-
-    def LoadModel(self, load_file_name):
-        self.__model__.load_weights(load_file_name)
+    def LoadMostRecentModel(self):
+        try:
+            last_cp = tf.train.latest_checkpoint(CNNClassifier.s_check_point_path)
+            self.__model__.load_weights(last_cp)
+            print("Loaded checkpoint from " + last_cp)
+        except:
+            print("No checkpoint is loaded.")
 
     @staticmethod
-    def PreprocessImage(image_path):
-
-        image = io.imread(image_path)
+    def PreprocessImage(image):
         image = transform.resize(image, (g_down_sampled_size, g_down_sampled_size), mode='constant')
         
         # 1st and 2nd dim is 8

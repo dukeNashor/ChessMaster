@@ -1,7 +1,8 @@
 try:
+    from matplotlib import pyplot as plt
     import BoardHelper
     import DataHelper
-    from ChessGlobalDefs import g_dataset_dir, g_train_dir, g_test_dir
+    from ChessGlobalDefs import *
     import Plotter
     import FeatureExtractor
     import Classifiers
@@ -17,15 +18,23 @@ test_DataHelper = False
 test_Plotter = False
 test_BoardHelper = False
 
-test_CNN = True
+test_CNN_train = False
+test_CNN_predict = True
 
-if test_CNN:
+if test_CNN_train:
     cnn = Classifiers.CNNClassifier()
     train_names = DataHelper.GetFileNamesInDir(g_train_dir)
     cnn.Train(train_names)
 
 
-
+if test_CNN_predict:
+    cnn = Classifiers.CNNClassifier()
+    cnn.LoadMostRecentModel()
+    predicted_label = cnn.Predict(DataHelper.ReadImage(a_random_file))
+    L = BoardHelper.LabelArrayToL(predicted_label)
+    FEN = BoardHelper.LtoFEN(L)
+    print("predicted: " + FEN)
+    print("Original:  " + DataHelper.GetCleanNameByPath(a_random_file))
 
 
 if test_SysSpecs:
@@ -116,10 +125,21 @@ if test_Plotter:
 
 if test_BoardHelper:
     print("Test start: BoardHelper")
+    str = "1b1B1b2-2pK2q1-4p1rB-7k-8-8-3B4-3rb3"
+    print("original FEN:", str)
+    l = BoardHelper.FENtoL(str)
+    print("FENtoL:", "".join(l))
+    fen = BoardHelper.LtoFEN(l)
+    print("LtoFEN:", fen)
+    if (str == fen):
+        print("FEN-L transform Result is correct.")
+    else:
+        print("FEN-L transform WRONG.")
+
     fen = DataHelper.GetCleanNameByPath(a_random_file)
     img = DataHelper.ReadImage(a_random_file)
-    index2, y_1 = BoardHelper.ReadBoardFEN(img, fen)
-    plt.imshow(index2[1].reshape(50, 50), cmap = plt.cm.gray)
+    grids = BoardHelper.ImageToGrids(img, g_grid_size, g_grid_size).reshape(g_grid_num, g_grid_size, g_grid_size, 3)
+    labels = BoardHelper.FENtoL(fen)
     plt.show()
     print("Test end: BoardHelper")
 

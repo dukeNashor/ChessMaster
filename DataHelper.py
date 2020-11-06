@@ -1,6 +1,7 @@
 import os
 
 import cv2
+from skimage import io
 import numpy as np
 
 import glob
@@ -35,8 +36,8 @@ def ReadImages(file_names, path = "", format = cv2.IMREAD_COLOR):
         return [cv2.imread(path + "/" + f, format) for f in file_names]
 
 # read image by name
-def ReadImage(file_name, format = cv2.IMREAD_COLOR):
-    return cv2.imread(file_name, format)
+def ReadImage(file_name):
+    return io.imread(file_name)
 
 
 # h5py functions
