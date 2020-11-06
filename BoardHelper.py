@@ -3,6 +3,8 @@ import string
 from collections import OrderedDict 
 
 import numpy as np
+import skimage.util
+from skimage.util.shape import view_as_blocks
 
 from ChessGlobalDefs import *
 
@@ -105,6 +107,10 @@ def ReadBoardFEN(board_image, fen):
 # Overload of the above function.
 def ReadBoardString(board_image, name_str):
     return ReadBoardFEN(board_image, FENtoL(name_str))
+
+# get grids of image
+def ImageToGrids(image, grid_size_x, grid_size_y):
+    return skimage.util.shape.view_as_blocks(image, block_shape = (grid_size_y, grid_size_x, 3)).squeeze(axis = 2)
     
 
 

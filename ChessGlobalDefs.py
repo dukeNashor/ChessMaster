@@ -11,6 +11,9 @@ g_grid_col = 8
 g_grid_num = g_grid_row * g_grid_col
 g_grid_size = int(g_image_size / g_grid_row)
 
+g_down_sampled_size = 200
+g_down_sampled_grid_size = int(g_grid_size / (g_image_size / g_down_sampled_size))
+
 # global instance of mapping of char vs chess pieces
 # reference: Forsyth–Edwards Notation, https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
 # 

@@ -5,13 +5,17 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 import cv2
+from skimage import io, transform
 import numpy as np
 import os
 
-from ChessGlobalDefs import g_grid_size, g_image_size, g_grid_num
+from ChessGlobalDefs import g_grid_size, g_image_size, g_grid_num, g_grid_row, g_grid_col, g_down_sampled_size, g_down_sampled_grid_size
 import BoardHelper
 import DataHelper
 
+
+
+from matplotlib import pyplot as plt
 
 #import tensorflow as tf
 #from tensorflow import keras
@@ -21,9 +25,11 @@ import DataHelper
 
 class CNNClassifier(Classifiers.IClassifier):
 
+    # the file name format does not accept batch as parameter. link:
+    # https://github.com/tensorflow/tensorflow/issues/38668
     s_check_point_file_name = "./CNN_training_checkpoint/cp_{epoch:02d}-{accuracy:.2f}.ckpt"
     s_check_point_path = os.path.dirname(s_check_point_file_name)
-    s_save_frequence = 10 # save a checkpoint every s_save_frequence batches
+    s_save_frequence = 10000 # save a checkpoint every s_save_frequence batches
 
     def __init__(self):
         
@@ -33,7 +39,7 @@ class CNNClassifier(Classifiers.IClassifier):
         # define our model
         self.__model__ = keras.Sequential(
             [
-                layers.Convolution2D(32, (3, 3), input_shape = (g_grid_size, g_grid_size, 3)), # 50, 50, 3
+                layers.Convolution2D(32, (3, 3), input_shape = (g_down_sampled_grid_size, g_down_sampled_grid_size, 3)),
                 layers.Activation('relu'),
 
                 layers.Convolution2D(32, (3, 3)),
@@ -112,6 +118,15 @@ class CNNClassifier(Classifiers.IClassifier):
 
     @staticmethod
     def PreprocessImage(image_path):
-        image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-        reshaped = image.reshape(g_grid_num, g_grid_size, g_grid_size, 3)
-        return reshaped
+
+        image = io.imread(image_path)
+        image = transform.resize(image, (g_down_sampled_size, g_down_sampled_size), mode='constant')
+        
+        # 1st and 2nd dim is 8
+        grids = BoardHelper.ImageToGrids(image, g_down_sampled_grid_size, g_down_sampled_grid_size)
+
+        # debug
+        #plt.imshow(grids[0][3])
+        #plt.show()
+
+        return grids.reshape(g_grid_row * g_grid_col, g_down_sampled_grid_size, g_down_sampled_grid_size, 3)
