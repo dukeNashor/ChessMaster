@@ -33,8 +33,8 @@ class CNNClassifier(Classifiers.IClassifier):
 
     def __init__(self):
         
-        tf.config.threading.set_inter_op_parallelism_threads(3)
-        tf.config.threading.set_intra_op_parallelism_threads(3)
+        #tf.config.threading.set_inter_op_parallelism_threads(3)
+        #tf.config.threading.set_intra_op_parallelism_threads(3)
 
         # define our model
         self.__model__ = keras.Sequential(
@@ -79,7 +79,7 @@ class CNNClassifier(Classifiers.IClassifier):
         # generator
         def func_generator(train_file_names):
             for image_file_name in train_file_names:
-                img = DataHeler.ReadImage(image_file_name)
+                img = DataHelper.ReadImage(image_file_name)
                 x = CNNClassifier.PreprocessImage(img)
                 y = np.array(BoardHelper.FENtoOneHot(DataHelper.GetCleanNameByPath(image_file_name)))
                 yield x, y
@@ -90,8 +90,8 @@ class CNNClassifier(Classifiers.IClassifier):
         # train
         self.__model__.fit(func_generator(train_data_names),
                            use_multiprocessing = False,
-                           #batch_size = 6400,
-                           steps_per_epoch = train_size,
+                           #batch_size = 1000,
+                           steps_per_epoch = train_size / 1,
                            epochs = 1,
                            callbacks = [self.__save_check_point_callback__],
                            verbose = 1)
