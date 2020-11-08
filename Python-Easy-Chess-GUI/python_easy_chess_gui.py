@@ -85,20 +85,62 @@ GUI_THEME = ['Green', 'GreenTan', 'LightGreen', 'BluePurple', 'Purple',
              'NeutralBlue', 'Kayak', 'SandyBeach', 'TealMono', 'Topanga',
              'Dark', 'Black', 'DarkAmber']
 
-
-
 # import our classifiers
 sys.path.insert(0,'../')
+
 try:
     import Classifiers
+    import BoardHelper
     from PIL import ImageGrab
-except:
-    print("import Classifiers failed. Check your path.")
+    import numpy as np
 
-# construct the CNN classifier, and read weights.
+    # this is to fix high-resolution monitor problem so that the 
+    # screen capture function could work.
+    # ref:https://github.com/PySimpleGUI/PySimpleGUI/issues/2962
+    import ctypes
+    ctypes.windll.user32.SetProcessDPIAware()
+
+except:
+    print("import failed. Check your path.")
+
+# construct the CNN classifier, and read weights.n
 cnn = Classifiers.CNNClassifier()
 cnn.LoadMostRecentModelFromDirectory("../CNN_training_checkpoint/")
 
+def get_grid(window, elem):
+    widget = elem.Widget
+    box = (widget.winfo_rootx(), widget.winfo_rooty(), widget.winfo_rootx() + widget.winfo_width(), widget.winfo_rooty() + widget.winfo_height())
+    grab = np.asarray(ImageGrab.grab(bbox=box))
+    return grab
+
+
+def get_whole_board(window):
+    elem = window.FindElement(key=(0, 0))
+    widget = elem.Widget
+    box = (widget.winfo_rootx(), widget.winfo_rooty(), widget.winfo_rootx() + widget.winfo_width() * 8, widget.winfo_rooty() + widget.winfo_height() * 8)
+    board_image = np.asarray(ImageGrab.grab(bbox=box))
+    # ImageGrab.grab(bbox=box).save("board.png")
+    return board_image
+
+
+def save_grid_as_file(window, elem, file_name):
+    os.makedirs(os.path.dirname(file_name), exist_ok = True)
+    grid = get_grid(window, elem)
+    PIL.Image.fromarray(grid).save(file_name)
+
+def ClassifyBoard(window, classifier):
+    
+    # get board image
+    board_image = get_whole_board(window)
+
+    # use classifier to process the image
+    predicted = classifier.Predict(board_image)
+    labels = np.array(BoardHelper.LabelArrayToL(predicted)).reshape(8, 8)
+
+    # update user interface
+    #print(labels)
+    textbox = window.FindElement('comment_k')
+    textbox.Update(np.array2string(labels))
 
 PIECE_THEME = [ str(i + 1) for i in range(32) ] + [ "default" ]
 
@@ -1526,6 +1568,8 @@ class EasyChessGui:
                 elem = window.FindElement(key=(i, j))
                 elem.Update(button_color=('white', color),
                             image_filename=piece_image, )
+                #save_grid_as_file(window, elem, "./grids/" + str(i) + "-" + str(j) + ".png")
+
 
     def render_square(self, image, key, location):
         """ Returns an RButton (Read Button) with image image """
@@ -1749,7 +1793,7 @@ class EasyChessGui:
         # Game loop
         while not board.is_game_over(claim_draw=True):
             moved_piece = None
-
+            
             # Mode: Play, Hide book 1
             if is_hide_book1:
                 window.Element('polyglot_book1_k').Update('')
@@ -2151,7 +2195,10 @@ class EasyChessGui:
 
                                 # Update game, move from human
                                 time_left = human_timer.base
-                                user_comment = value['comment_k']
+                                # we ignored the comments to better format the move list, and our prediction.
+                                # user_comment = value['comment_k']
+                                user_comment = "\n"
+
                                 self.update_game(move_cnt, user_move, time_left, user_comment)
 
                                 window.FindElement('_movelist_').Update(disabled=False)
@@ -2166,6 +2213,10 @@ class EasyChessGui:
                                 # Change the color of the "fr" and "to" board squares
                                 self.change_square_color(window, fr_row, fr_col)
                                 self.change_square_color(window, to_row, to_col)
+
+                                # call our classifier
+                                window.refresh()
+                                ClassifyBoard(window, cnn)
 
                                 is_human_stm = not is_human_stm
                                 # Human has done its move
@@ -2390,6 +2441,10 @@ class EasyChessGui:
                 # Change the color of the "fr" and "to" board squares
                 self.change_square_color(window, fr_row, fr_col)
                 self.change_square_color(window, to_row, to_col)
+                
+                # call our classifier
+                window.refresh()
+                ClassifyBoard(window, cnn)
 
                 is_human_stm = not is_human_stm
                 # Engine has done its move
@@ -2568,7 +2623,7 @@ class EasyChessGui:
                     font=('Consolas', 10), key='_movelist_', disabled=True)],
 
             [sg.Text('Comment', size=(7, 1), font=('Consolas', 10))],
-            [sg.Multiline('', do_not_clear=True, autoscroll=True, size=(52, 3),
+            [sg.Multiline('', do_not_clear=True, autoscroll=True, size=(52, 8),
                     font=('Consolas', 10), key='comment_k')],
 
             [sg.Text('BOOK 1, Comp games', size=(26, 1),
