@@ -85,9 +85,24 @@ GUI_THEME = ['Green', 'GreenTan', 'LightGreen', 'BluePurple', 'Purple',
              'NeutralBlue', 'Kayak', 'SandyBeach', 'TealMono', 'Topanga',
              'Dark', 'Black', 'DarkAmber']
 
+
+
+# import our classifiers
+sys.path.insert(0,'../')
+try:
+    import Classifiers
+    from PIL import ImageGrab
+except:
+    print("import Classifiers failed. Check your path.")
+
+# construct the CNN classifier, and read weights.
+cnn = Classifiers.CNNClassifier()
+cnn.LoadMostRecentModelFromDirectory("../CNN_training_checkpoint/")
+
+
 PIECE_THEME = [ str(i + 1) for i in range(32) ] + [ "default" ]
 
-IMAGE_PATH = 'Images/60'  # path to the chess pieces
+IMAGE_PATH = 'Images/60_scaled'  # path to the chess pieces
 PIECE_IMAGE_PATH = "../chess-generator/ChessGenerator/pieces/"
 
 BLANK = 0  # piece names
@@ -178,10 +193,45 @@ kingB = os.path.join(IMAGE_PATH, 'bK.png')
 kingW = os.path.join(IMAGE_PATH, 'wK.png')
 
 
-images = {BISHOPB: bishopB, BISHOPW: bishopW, PAWNB: pawnB, PAWNW: pawnW,
-          KNIGHTB: knightB, KNIGHTW: knightW,
-          ROOKB: rookB, ROOKW: rookW, KINGB: kingB, KINGW: kingW,
-          QUEENB: queenB, QUEENW: queenW, BLANK: blank}
+#images = {BISHOPB: bishopB, BISHOPW: bishopW, PAWNB: pawnB, PAWNW: pawnW,
+#          KNIGHTB: knightB, KNIGHTW: knightW,
+#          ROOKB: rookB, ROOKW: rookW, KINGB: kingB, KINGW: kingW,
+#          QUEENB: queenB, QUEENW: queenW, BLANK: blank}
+
+# default theme of EasyChessGui
+theme_default = {BISHOPB: bishopB, BISHOPW: bishopW, PAWNB: pawnB, PAWNW: pawnW,
+                 KNIGHTB: knightB, KNIGHTW: knightW,
+                 ROOKB: rookB, ROOKW: rookW, KINGB: kingB, KINGW: kingW,
+                 QUEENB: queenB, QUEENW: queenW, BLANK: blank}
+
+# themes of our dataset
+dataset_themes = {}
+
+for i in range(32):
+    display_name = str(i+1)
+    dataset_themes.setdefault(display_name, {})
+    
+    theme_dir = PIECE_IMAGE_PATH + "/" + str(i+1) + "/"
+
+    dataset_themes[display_name] = { \
+        BLANK   : os.path.join(blank),               # use the blank from default
+        BISHOPB : os.path.join(theme_dir, 'b_b.png'),
+        BISHOPW : os.path.join(theme_dir, 'b_w.png'),
+        PAWNB   : os.path.join(theme_dir, 'p_b.png'),
+        PAWNW   : os.path.join(theme_dir, 'p_w.png'),
+        KNIGHTB : os.path.join(theme_dir, 'n_b.png'),
+        KNIGHTW : os.path.join(theme_dir, 'n_w.png'),
+        ROOKB   : os.path.join(theme_dir, 'r_b.png'),
+        ROOKW   : os.path.join(theme_dir, 'r_w.png'),
+        QUEENB  : os.path.join(theme_dir, 'q_b.png'),
+        QUEENW  : os.path.join(theme_dir, 'q_w.png'),
+        KINGB   : os.path.join(theme_dir, 'k_b.png'),
+        KINGW   : os.path.join(theme_dir, 'k_w.png')
+        }
+
+dataset_themes["default"] = theme_default
+
+# images = dataset_themes["default"]
 
 
 # Promote piece from psg (pysimplegui) to pyc (python-chess)
@@ -209,7 +259,11 @@ menu_def_neutral = [
                       'Green::board_color_k',
                       'Gray::board_color_k'],
             'Theme', GUI_THEME,
-            'Piece Theme', PIECE_THEME
+            ]
+        ],
+        ["Settings for &Assignment COMP5318",
+            [
+                'Piece Theme', PIECE_THEME
             ]
         ],
         ['&Engine', ['Set Engine Adviser', 'Set Engine Opponent', 'Set Depth',
@@ -225,6 +279,11 @@ menu_def_neutral = [
 # (2) Mode: Play, info: hide
 menu_def_play = [
         ['&Mode', ['Neutral']],
+        ["Settings for &Assignment COMP5318",
+            [
+                'Piece Theme', PIECE_THEME
+            ]
+        ],
         ['&Game', ['&New::new_game_k',
                    'Save to My Games::save_game_k',
                    'Save to White Repertoire',
@@ -451,8 +510,7 @@ class RunEngine(threading.Thread):
         try:
             if platform == 'win32':
                 self.engine = chess.engine.SimpleEngine.popen_uci(
-                    self.engine_path_and_file, cwd=folder,
-                    creationflags=subprocess.CREATE_NO_WINDOW)
+                    self.engine_path_and_file)
             else:
                 self.engine = chess.engine.SimpleEngine.popen_uci(
                     self.engine_path_and_file, cwd=folder)
@@ -689,6 +747,8 @@ class EasyChessGui:
         self.move_sq_dark_color = '#B8AF4E'
 
         self.gui_theme = 'Reddit'
+
+        self.images = dataset_themes["default"]
 
         self.is_save_time_left = False
         self.is_save_user_comment = True
@@ -1462,7 +1522,7 @@ class EasyChessGui:
             for j in range(8):
                 color = self.sq_dark_color if (i + j) % 2 else \
                         self.sq_light_color
-                piece_image = images[self.psg_board[i][j]]
+                piece_image = self.images[self.psg_board[i][j]]
                 elem = window.FindElement(key=(i, j))
                 elem.Update(button_color=('white', color),
                             image_filename=piece_image, )
@@ -1493,7 +1553,7 @@ class EasyChessGui:
         # Loop through board and create buttons with images        
         for i in range(1):
             for j in range(4):
-                piece_image = images[psg_promote_board[i][j]]
+                piece_image = self.images[psg_promote_board[i][j]]
                 row.append(self.render_square(piece_image, key=(i, j),
                                               location=(i, j)))
 
@@ -1892,6 +1952,13 @@ class EasyChessGui:
                         logging.info('Quit app X is pressed.')
                         is_exit_app = True
                         break
+
+                    # redraw when changed theme
+                    if button in PIECE_THEME:
+                        print("selected piece theme " + button)
+                        self.images = dataset_themes[button]
+                        self.redraw_board(window)
+                        continue
 
                     if is_search_stop_for_exit:
                         is_exit_app = True
@@ -2452,7 +2519,7 @@ class EasyChessGui:
             # Row numbers at left of board is blank
             row = []
             for j in range(start, end, step):
-                piece_image = images[self.psg_board[i][j]]
+                piece_image = self.images[self.psg_board[i][j]]
                 row.append(self.render_square(piece_image, key=(i, j), location=(i, j)))
             board_layout.append(row)
 
@@ -3466,6 +3533,8 @@ class EasyChessGui:
 
             if button in PIECE_THEME:
                 print("selected piece theme " + button)
+                self.images = dataset_themes[button]
+                self.redraw_board(window)
                 continue
 
             # Mode: Neutral, Change board to gray

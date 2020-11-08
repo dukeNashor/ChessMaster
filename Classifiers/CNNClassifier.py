@@ -109,8 +109,11 @@ class CNNClassifier(Classifiers.IClassifier):
         __model__.save_weights(CNNClassifier.s_check_point_file_name)
 
     def LoadMostRecentModel(self):
+        return LoadMostRecentModelFromDirectory(self, CNNClassifier.s_check_point_path)
+	
+    def LoadMostRecentModelFromDirectory(self, path):
         try:
-            last_cp = tf.train.latest_checkpoint(CNNClassifier.s_check_point_path)
+            last_cp = tf.train.latest_checkpoint(path)
             self.__model__.load_weights(last_cp)
             print("Loaded checkpoint from " + last_cp)
         except:
