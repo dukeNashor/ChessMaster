@@ -6,12 +6,12 @@ import abc
 # interface of the classifiers
 class IClassifier:
 
-    # this method should accept N * 64 * m * n numpy array as train data, and N lists of 64 chars as label.
+    # this method should accept a list of file names of the training data
     @abc.abstractmethod
     def Train(self, train_file_names):
         raise NotImplementedError()
 
-    # this should accept a 64 * m * n numpy array as query data, and returns the fen notation of the board.
+    # this should accept a 400 * 400 * 3 numpy array as query data, and returns the fen notation of the board.
     @abc.abstractmethod
     def Predict(self, query_data):
         raise NotImplementedError()
