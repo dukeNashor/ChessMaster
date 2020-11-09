@@ -72,23 +72,24 @@ class CNNClassifier(Classifiers.IClassifier):
             )
 
 
+     # generator
+    @staticmethod
+    def func_generator(train_file_names):
+        for image_file_name in train_file_names:
+            img = DataHelper.ReadImage(image_file_name)
+            x = CNNClassifier.PreprocessImage(img)
+            y = np.array(BoardHelper.FENtoOneHot(DataHelper.GetCleanNameByPath(image_file_name)))
+            yield x, y
+
     # this method should accept N * 64 * m * n numpy array as train data, and N lists of 64 chars as label.
     def Train(self, train_data_names):
         train_size = len(train_data_names)
 
-        # generator
-        def func_generator(train_file_names):
-            for image_file_name in train_file_names:
-                img = DataHelper.ReadImage(image_file_name)
-                x = CNNClassifier.PreprocessImage(img)
-                y = np.array(BoardHelper.FENtoOneHot(DataHelper.GetCleanNameByPath(image_file_name)))
-                yield x, y
-        
         # try load last checkpoint
         self.LoadMostRecentModel()
 
         # train
-        self.__model__.fit(func_generator(train_data_names),
+        self.__model__.fit(CNNClassifier.func_generator(train_data_names),
                            use_multiprocessing = False,
                            #batch_size = 1000,
                            steps_per_epoch = train_size / 1,
@@ -109,8 +110,8 @@ class CNNClassifier(Classifiers.IClassifier):
         __model__.save_weights(CNNClassifier.s_check_point_file_name)
 
     def LoadMostRecentModel(self):
-        return LoadMostRecentModelFromDirectory(self, CNNClassifier.s_check_point_path)
-	
+        return self.LoadMostRecentModelFromDirectory(CNNClassifier.s_check_point_path)
+    
     def LoadMostRecentModelFromDirectory(self, path):
         try:
             last_cp = tf.train.latest_checkpoint(path)
@@ -118,6 +119,17 @@ class CNNClassifier(Classifiers.IClassifier):
             print("Loaded checkpoint from " + last_cp)
         except:
             print("No checkpoint is loaded.")
+
+    def TestAccuracy(self, test_file_names):
+        num_files = len(test_file_names)
+
+        predict_result = self.__model__.predict(CNNClassifier.func_generator(test_file_names)).argmax(axis=1)
+        predict_result = predict_result.reshape(num_files, -1)
+        predicted_fen_arr = np.array([BoardHelper.LtoFEN(BoardHelper.LabelArrayToL(labels)) for labels in predict_result])
+        test_fens = np.array([DataHelper.GetCleanNameByPath(file_name) for file_name in test_file_names])
+
+        final_accuracy = (predicted_fen_arr == test_fens).astype(np.float).mean()
+        return final_accuracy
 
     @staticmethod
     def PreprocessImage(image):

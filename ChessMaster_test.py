@@ -13,13 +13,13 @@ a_random_file = "../dataset/train/1b1B1b2-2pK2q1-4p1rB-7k-8-8-3B4-3rb3.jpeg"
 
 
 test_SysSpecs = False
-test_CVFeature = True
+test_CVFeature = False
 test_DataHelper = False
 test_Plotter = False
 test_BoardHelper = False
 
 test_CNN_train = False
-test_CNN_predict = False
+test_CNN_predict = True
 
 if test_CNN_train:
     cnn = Classifiers.CNNClassifier()
@@ -36,6 +36,9 @@ if test_CNN_predict:
     print("predicted: " + FEN)
     print("Original:  " + DataHelper.GetCleanNameByPath(a_random_file))
 
+    test_file_names = DataHelper.GetFileNamesInDir(g_test_dir)
+    accuracy = cnn.TestAccuracy(test_file_names[:10])
+    print("CNN: Final accuracy: {}".format(accuracy))
 
 if test_SysSpecs:
     import os, platform
