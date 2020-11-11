@@ -41,10 +41,10 @@ class CNNClassifier(Classifiers.IClassifier):
             [
                 layers.Convolution2D(32, (3, 3), input_shape = (g_down_sampled_grid_size, g_down_sampled_grid_size, 3)),
                 layers.Activation('relu'),
-
+                layers.Dropout(0.1),
                 layers.Convolution2D(32, (3, 3)),
                 layers.Activation('relu'),
-                
+
                 layers.Convolution2D(32, (3, 3)),
                 layers.Activation('relu'),
 
@@ -52,8 +52,7 @@ class CNNClassifier(Classifiers.IClassifier):
                 
                 layers.Dense(128),
                 layers.Activation('relu'),
-
-                layers.Dropout(0.4),
+                layers.Dropout(0.3),
 
                 layers.Dense(13),
                 layers.Activation("softmax")
@@ -86,14 +85,15 @@ class CNNClassifier(Classifiers.IClassifier):
         train_size = len(train_data_names)
 
         # try load last checkpoint
-        self.LoadMostRecentModel()
+        if not self.LoadMostRecentModel():
+            os.makedirs(CNNClassifier.s_check_point_path, exist_ok = True)
 
         # train
         self.__model__.fit(CNNClassifier.func_generator(train_data_names),
                            use_multiprocessing = False,
                            #batch_size = 1000,
-                           steps_per_epoch = train_size / 1,
-                           epochs = 1,
+                           steps_per_epoch = train_size / 10,
+                           epochs = 5,
                            callbacks = [self.__save_check_point_callback__],
                            verbose = 1)
 
@@ -106,7 +106,7 @@ class CNNClassifier(Classifiers.IClassifier):
         return pred
 
     def SaveModel(self):
-        os.makedirs(CNNClassifier.s_check_point_path, exist_ok=True)
+        os.makedirs(CNNClassifier.s_check_point_path, exist_ok = True)
         __model__.save_weights(CNNClassifier.s_check_point_file_name)
 
     def LoadMostRecentModel(self):
@@ -117,8 +117,10 @@ class CNNClassifier(Classifiers.IClassifier):
             last_cp = tf.train.latest_checkpoint(path)
             self.__model__.load_weights(last_cp)
             print("Loaded checkpoint from " + last_cp)
+            return True
         except:
             print("No checkpoint is loaded.")
+            return False
 
     def TestAccuracy(self, test_file_names):
         num_files = len(test_file_names)
