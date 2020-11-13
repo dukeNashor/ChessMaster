@@ -19,7 +19,22 @@ test_Plotter = False
 test_BoardHelper = False
 
 test_CNN_train = False
-test_CNN_predict = True
+test_CNN_predict = False
+
+test_SVC = True
+
+if test_SVC:
+    svc = Classifiers.SVCClassifier()
+    train_names = DataHelper.GetFileNamesInDir(g_train_dir)
+    svc.Train(train_names[:100])
+    y_truth = BoardHelper.FENtoL(DataHelper.GetCleanNameByPath(a_random_file))
+    img = DataHelper.ReadImage(a_random_file, gray = True)
+    pred = svc.Predict(img)
+    print("truth:  ", y_truth)
+    print("pred :  ", pred)
+
+
+
 
 if test_CNN_train:
     cnn = Classifiers.CNNClassifier()

@@ -36,8 +36,8 @@ def ReadImages(file_names, path = "", format = cv2.IMREAD_COLOR):
         return [cv2.imread(path + "/" + f, format) for f in file_names]
 
 # read image by name
-def ReadImage(file_name):
-    return io.imread(file_name)
+def ReadImage(file_name, gray = False):
+    return io.imread(file_name, as_gray = gray)
 
 
 # h5py functions

@@ -35,6 +35,9 @@
     <Compile Include="Classifiers\IClassifier.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Classifiers\SVCClassifier.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Classifiers\__init__.py">
       <SubType>Code</SubType>
     </Compile>
