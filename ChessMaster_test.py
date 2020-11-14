@@ -6,11 +6,15 @@ try:
     import Plotter
     import FeatureExtractor
     import Classifiers
+    import time
 except ImportError:
     print("Import failed.")
 
 a_random_file = "../dataset/train/1b1B1b2-2pK2q1-4p1rB-7k-8-8-3B4-3rb3.jpeg"
 
+saved_model_path = "./saved_model/"
+abc_model_file = saved_model_path + "abc_dump.pkl"
+svc_model_file = saved_model_path + "svc_dump.pkl"
 
 test_SysSpecs = False
 test_CVFeature = False
@@ -18,20 +22,60 @@ test_DataHelper = False
 test_Plotter = False
 test_BoardHelper = False
 
-test_CNN_train = False
-test_CNN_predict = False
 
-test_SVC = True
+test_CNN_train = False
+test_CNN_predict = True
+
+test_ABC = False
+ABC_load_model = True
+
+test_SVC = False
+SVC_load_model = True
+
+
+if test_ABC:
+    abc = Classifiers.ABClassifier()
+    train_names = DataHelper.GetFileNamesInDir(g_train_dir)
+
+    if ABC_load_model:
+        print("abc: loading model from " + abc_model_file)
+        abc.LoadModel(abc_model_file)
+    else:
+        abc.Train(train_names)
+
+    y_truth = BoardHelper.FENtoL(DataHelper.GetCleanNameByPath(a_random_file))
+    img = DataHelper.ReadImage(a_random_file, gray = True)
+    pred = abc.Predict(img)
+    print("truth:  ", ''.join(y_truth))
+    print("pred :  ", ''.join(pred))
+
+    # save model
+    if not ABC_load_model:
+        print("abc: saving model to " + abc_model_file)
+        abc.SaveModel(abc_model_file)
+
+
 
 if test_SVC:
     svc = Classifiers.SVCClassifier()
     train_names = DataHelper.GetFileNamesInDir(g_train_dir)
-    svc.Train(train_names[:100])
+
+    if SVC_load_model:
+        print("svc: loading model from " + svc_model_file)
+        svc.LoadModel(svc_model_file)
+    else:
+        svc.Train(train_names[:500])
+
     y_truth = BoardHelper.FENtoL(DataHelper.GetCleanNameByPath(a_random_file))
     img = DataHelper.ReadImage(a_random_file, gray = True)
     pred = svc.Predict(img)
-    print("truth:  ", y_truth)
-    print("pred :  ", pred)
+    print("truth:  ", ''.join(y_truth))
+    print("pred :  ", ''.join(pred))
+
+    # save model
+    if not SVC_load_model:
+        print("svc: saving model to " + svc_model_file)
+        svc.SaveModel(svc_model_file)
 
 
 
@@ -46,7 +90,7 @@ if test_CNN_predict:
     cnn = Classifiers.CNNClassifier()
     cnn.LoadMostRecentModel()
     predicted_label = cnn.Predict(DataHelper.ReadImage(a_random_file))
-    L = BoardHelper.LabelArrayToL(predicted_label)
+    L = predicted_label
     FEN = BoardHelper.LtoFEN(L)
     print("predicted: " + FEN)
     print("Original:  " + DataHelper.GetCleanNameByPath(a_random_file))

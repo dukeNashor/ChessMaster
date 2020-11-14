@@ -91,7 +91,7 @@ sys.path.insert(0,'../')
 try:
     import Classifiers
     import BoardHelper
-    from PIL import ImageGrab
+    from PIL import ImageGrab, ImageOps
     import numpy as np
 
     # this is to fix high-resolution monitor problem so that the 
@@ -103,9 +103,19 @@ try:
 except:
     print("import failed. Check your path.")
 
+saved_model_path = "../saved_model/"
+abc_model_file = saved_model_path + "abc_dump.pkl"
+svc_model_file = saved_model_path + "svc_dump.pkl"
+
 # construct the CNN classifier, and read weights.n
 cnn = Classifiers.CNNClassifier()
 cnn.LoadMostRecentModelFromDirectory("../CNN_training_checkpoint/")
+
+svc = Classifiers.SVCClassifier()
+svc.LoadModel(svc_model_file)
+
+abc = Classifiers.ABClassifier()
+abc.LoadModel(abc_model_file)
 
 def get_grid(window, elem):
     widget = elem.Widget
@@ -114,11 +124,15 @@ def get_grid(window, elem):
     return grab
 
 
-def get_whole_board(window):
+def get_whole_board(window, gray = False):
     elem = window.FindElement(key=(0, 0))
     widget = elem.Widget
     box = (widget.winfo_rootx(), widget.winfo_rooty(), widget.winfo_rootx() + widget.winfo_width() * 8, widget.winfo_rooty() + widget.winfo_height() * 8)
-    board_image = np.asarray(ImageGrab.grab(bbox=box))
+    pil_img = ImageGrab.grab(bbox=box)
+    if gray:
+        pil_img = ImageOps.grayscale(pil_img)
+    
+    board_image = np.asarray(pil_img)
     # ImageGrab.grab(bbox=box).save("board.png")
     return board_image
 
@@ -128,19 +142,21 @@ def save_grid_as_file(window, elem, file_name):
     grid = get_grid(window, elem)
     PIL.Image.fromarray(grid).save(file_name)
 
-def ClassifyBoard(window, classifier):
+def ClassifyBoard(window, classifier, window_element_label):
     
-    # get board image
-    board_image = get_whole_board(window)
-
     # use classifier to process the image
+    if isinstance(classifier, Classifiers.SVCClassifier) or isinstance(classifier, Classifiers.ABClassifier):
+        board_image = get_whole_board(window, True)
+    else:
+        board_image = get_whole_board(window, False)
+
     predicted = classifier.Predict(board_image)
-    labels = np.array(BoardHelper.LabelArrayToL(predicted)).reshape(8, 8)
+    labels = np.array(predicted).reshape(8, 8)
 
     # update user interface
     #print(labels)
-    textbox = window.FindElement('comment_k')
-    textbox.Update(np.array2string(labels))
+    textbox = window.FindElement(window_element_label)
+    textbox.Update(type(classifier).__name__ + "\n" + np.array2string(labels))
 
 PIECE_THEME = [ str(i + 1) for i in range(32) ] + [ "default" ]
 
@@ -1421,7 +1437,10 @@ class EasyChessGui:
         window.FindElement('polyglot_book1_k').Update('')
         window.FindElement('polyglot_book2_k').Update('')
         window.FindElement('advise_info_k').Update('')
-        window.FindElement('comment_k').Update('')
+        #window.FindElement('comment_k').Update('')
+        window.FindElement('cnn_prediction').Update('')
+        window.FindElement('abc_prediction').Update('')
+        window.FindElement('svc_prediction').Update('')
         window.Element('w_base_time_k').Update('')
         window.Element('b_base_time_k').Update('')
         window.Element('w_elapse_k').Update('')
@@ -2207,16 +2226,18 @@ class EasyChessGui:
                                     self.game.variations[0], append=True, disabled=True)
 
                                 # Clear comment and engine search box
-                                window.FindElement('comment_k').Update('')
+                                #window.FindElement('comment_k').Update('')
                                 window.Element('search_info_all_k').Update('')
 
                                 # Change the color of the "fr" and "to" board squares
                                 self.change_square_color(window, fr_row, fr_col)
                                 self.change_square_color(window, to_row, to_col)
 
-                                # call our classifier
+                                # call our classifiers
                                 window.refresh()
-                                ClassifyBoard(window, cnn)
+                                ClassifyBoard(window, cnn, "cnn_prediction")
+                                ClassifyBoard(window, abc, "abc_prediction")
+                                ClassifyBoard(window, svc, "svc_prediction")
 
                                 is_human_stm = not is_human_stm
                                 # Human has done its move
@@ -2442,9 +2463,11 @@ class EasyChessGui:
                 self.change_square_color(window, fr_row, fr_col)
                 self.change_square_color(window, to_row, to_col)
                 
-                # call our classifier
+                # call our classifiers
                 window.refresh()
-                ClassifyBoard(window, cnn)
+                ClassifyBoard(window, cnn, "cnn_prediction")
+                ClassifyBoard(window, abc, "abc_prediction")
+                ClassifyBoard(window, svc, "svc_prediction")
 
                 is_human_stm = not is_human_stm
                 # Engine has done its move
@@ -2623,8 +2646,14 @@ class EasyChessGui:
                     font=('Consolas', 10), key='_movelist_', disabled=True)],
 
             [sg.Text('Comment', size=(7, 1), font=('Consolas', 10))],
-            [sg.Multiline('', do_not_clear=True, autoscroll=True, size=(52, 8),
-                    font=('Consolas', 10), key='comment_k')],
+            #[sg.Multiline('', do_not_clear=True, autoscroll=True, size=(52, 8),
+            #        font=('Consolas', 10), key='comment_k')],
+            [sg.Multiline('', do_not_clear=True, autoscroll=True, size=(52, 9),
+            font=('Consolas', 10), key='cnn_prediction')],
+            [sg.Multiline('', do_not_clear=True, autoscroll=True, size=(52, 9),
+            font=('Consolas', 10), key='abc_prediction')],
+            [sg.Multiline('', do_not_clear=True, autoscroll=True, size=(52, 9),
+            font=('Consolas', 10), key='svc_prediction')],
 
             [sg.Text('BOOK 1, Comp games', size=(26, 1),
                      font=('Consolas', 10),

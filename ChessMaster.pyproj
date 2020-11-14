@@ -29,6 +29,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ChessMaster_test.py" />
+    <Compile Include="Classifiers\ABClassifier.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Classifiers\CNNClassifier.py">
       <SubType>Code</SubType>
     </Compile>

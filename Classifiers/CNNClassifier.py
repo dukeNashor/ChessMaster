@@ -101,9 +101,9 @@ class CNNClassifier(Classifiers.IClassifier):
     # this should accept a 64 * m * n numpy array as query data, and returns the fen notation of the board.
     def Predict(self, query_data):
         grids = CNNClassifier.PreprocessImage(query_data)
-        pred = self.__model__.predict(grids).argmax(axis=1)
+        y_pred = self.__model__.predict(grids).argmax(axis=1)
 
-        return pred
+        return BoardHelper.LabelArrayToL(y_pred)
 
     def SaveModel(self):
         os.makedirs(CNNClassifier.s_check_point_path, exist_ok = True)
